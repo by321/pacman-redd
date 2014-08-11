@@ -21,7 +21,10 @@ var NONE        = 4,
     DYING       = 10,
     Pacman      = {};
 
-Pacman.FPS = 30;
+Pacman.FPS = 25;
+fplayed=false
+var audio_disabled=false;
+
 
 Pacman.Ghost = function (game, map, colour) {
 
@@ -128,7 +131,7 @@ Pacman.Ghost = function (game, map, colour) {
 
     function getColour() { 
         if (eatable) { 
-            if (secondsAgo(eatable) > 5) { 
+            if (secondsAgo(eatable) >=4) { 
                 return game.getTick() % 20 > 10 ? "#FFFFFF" : "#0000BB";
             } else { 
                 return "#0000BB";
@@ -144,8 +147,10 @@ Pacman.Ghost = function (game, map, colour) {
         var s    = map.blockSize, 
             top  = (position.y/10) * s,
             left = (position.x/10) * s;
-    
-        if (eatable && secondsAgo(eatable) > 8) {
+        var eatableLeft = 9 - game.getLevel();
+		if (eatableLeft<1) eatableLeft=1;
+		if (eatableLeft>8) eatableLeft=8;
+        if (eatable && secondsAgo(eatable) > 1000+eatableLeft ) {
             eatable = null;
         }
         
@@ -437,14 +442,15 @@ Pacman.User = function (game, map) {
             addScore((block === Pacman.BISCUIT) ? 10 : 50);
             eaten += 1;
             
-            if (eaten === 182) {
-                game.completedLevel();
-            }
             
             if (block === Pacman.PILL) { 
                 game.eatenPill();
             }
+			if (block === Pacman.BISCUIT) game.eatenBiscuit();
         }   
+		if (eaten === 182) {
+			game.completedLevel();
+		}
                 
         return {
             "new" : position,
@@ -602,27 +608,29 @@ Pacman.Map = function (size) {
 
     function drawPills(ctx) { 
 
-        if (++pillSize > 30) {
-            pillSize = 0;
-        }
-        
+        //if (++pillSize > 30) { pillSize = 0; }
+        if (++pillSize==blockSize+blockSize) pillSize=0;
         for (i = 0; i < height; i += 1) {
 		    for (j = 0; j < width; j += 1) {
                 if (map[i][j] === Pacman.PILL) {
-                    ctx.beginPath();
-
-                    ctx.fillStyle = "#000";
+                    //ctx.beginPath();
+                    //ctx.fillStyle = "#000";
+		            //ctx.fillRect((j * blockSize), (i * blockSize), 
+                    //             blockSize, blockSize);
+                    //ctx.fillStyle = "#FFF";
+                    //ctx.arc((j * blockSize) + blockSize / 2,(i * blockSize) + blockSize / 2,
+                    //        Math.abs(5 - (pillSize/3)),  0, Math.PI * 2, false); 
+                    //ctx.fill();
+                    //ctx.closePath();
+					
+                    ctx.fillStyle = "#000000";
 		            ctx.fillRect((j * blockSize), (i * blockSize), 
                                  blockSize, blockSize);
+		            var imgr=Math.abs(blockSize - pillSize);
+					var ctrx=(j * blockSize) + (blockSize - imgr)/2;
+					var ctry=(i * blockSize) + (blockSize - imgr)/2;
+					ctx.drawImage(gImages[1], ctrx,ctry, imgr,imgr);
 
-                    ctx.fillStyle = "#FFF";
-                    ctx.arc((j * blockSize) + blockSize / 2,
-                            (i * blockSize) + blockSize / 2,
-                            Math.abs(5 - (pillSize/3)), 
-                            0, 
-                            Math.PI * 2, false); 
-                    ctx.fill();
-                    ctx.closePath();
                 }
 		    }
 	    }
@@ -717,11 +725,15 @@ Pacman.Audio = function(game) {
     };
 
     function disableSound() {
-        for (var i = 0; i < playing.length; i++) {
-            files[playing[i]].pause();
-            files[playing[i]].currentTime = 0;
-        }
-        playing = [];
+        //for (var i = 0; i < playing.length; i++) {
+        //    files[playing[i]].pause();
+        //    files[playing[i]].currentTime = 0;
+        //}
+        //playing = [];
+		for (var i=0;i<gAudios.length;i++) {
+			gAudios[i].pause();
+			gAudios[i].currentTime=0;
+		}
     };
 
     function ended(name) { 
@@ -731,7 +743,7 @@ Pacman.Audio = function(game) {
         files[name].removeEventListener("ended", endEvents[name], true);
 
         for (i = 0; i < playing.length; i++) {
-            if (!found && playing[i]) { 
+            if (!found && playing[i]==name) { 
                 found = true;
             } else { 
                 tmp.push(playing[i]);
@@ -741,24 +753,32 @@ Pacman.Audio = function(game) {
     };
 
     function play(name) { 
-        if (!game.soundDisabled()) {
-            endEvents[name] = function() { ended(name); };
-            playing.push(name);
-            files[name].addEventListener("ended", endEvents[name], true);
-            files[name].play();
-        }
+		if (game.soundDisabled()) return;
+		for (var i=0;i<gAudios.length;i++) {
+			if (gAudioNames[i]==name) {
+				//gAudios[i].currentTime=Modernizr.audio.mp3 ? 0.05 :0;
+				gAudios[i].play();
+			}
+		}
+		//if (!game.soundDisabled()) {
+		//	endEvents[name] = function() { ended(name); };
+		//	files[name].addEventListener("ended", endEvents[name], true);
+        //    playing.push(name);
+        //    files[name].play();
+        //}
     };
 
     function pause() { 
-        for (var i = 0; i < playing.length; i++) {
-            files[playing[i]].pause();
-        }
+        //for (var i = 0; i < playing.length; i++) {
+        //    files[playing[i]].pause();
+        //}
+		for (var i=0;i<gAudios.length;i++) gAudios[i].pause();
     };
     
     function resume() { 
-        for (var i = 0; i < playing.length; i++) {
-            files[playing[i]].play();
-        }        
+        //for (var i = 0; i < playing.length; i++) {
+        //    files[playing[i]].play();
+        //}        
     };
     
     return {
@@ -789,9 +809,8 @@ var PACMAN = (function () {
         user         = null,
         stored       = null;
 
-    function getTick() { 
-        return tick;
-    };
+    function getTick() { return tick; };
+    function getLevel() { return level; };
 
     function drawScore(text, position) {
         ctx.fillStyle = "#FFFFFF";
@@ -810,7 +829,7 @@ var PACMAN = (function () {
     }
 
     function soundDisabled() {
-        return localStorage["soundDisabled"] === "true";
+        return audio_disabled;
     };
     
     function startLevel() {        
@@ -837,7 +856,7 @@ var PACMAN = (function () {
             startNewGame();
         } else if (e.keyCode === KEY.S) {
             audio.disableSound();
-            localStorage["soundDisabled"] = !soundDisabled();
+            audio_disabled = !soundDisabled();
         } else if (e.keyCode === KEY.P && state === PAUSE) {
             audio.resume();
             map.draw(ctx);
@@ -896,12 +915,16 @@ var PACMAN = (function () {
 
         ctx.fillStyle = !soundDisabled() ? "#00FF00" : "#FF0000";
         ctx.font = "bold 16px sans-serif";
-        //ctx.fillText("♪", 10, textBase);
-        ctx.fillText("s", 10, textBase);
+        ctx.fillText("♪s", 10, textBase);
 
         ctx.fillStyle = "#FFFF00";
+		ctx.font = "bold 14px sans-serif";
+        ctx.fillText("PoSV:", 36, textBase);
+		var nx=ctx.measureText("PoSV:").width;
+		
+        ctx.fillStyle = "#FFFF00";
         ctx.font      = "14px BDCartoonShoutRegular";
-        ctx.fillText("Score: " + user.theScore(), 30, textBase);
+        ctx.fillText(user.theScore(), 36+nx+nx/10, textBase);
         ctx.fillText("Level: " + level, 260, textBase);
     }
 
@@ -950,7 +973,7 @@ var PACMAN = (function () {
                     timerStart = tick;
                 }
             }
-        }                             
+        } 
     };
 
     function mainLoop() {
@@ -1003,6 +1026,10 @@ var PACMAN = (function () {
         drawFooter();
     }
 
+    function eatenBiscuit() {
+		audio.play("eating");
+	}
+	
     function eatenPill() {
         audio.play("eatpill");
         timerStart = tick;
@@ -1028,7 +1055,6 @@ var PACMAN = (function () {
     };
     
     function init(wrapper, root) {
-        
         var i, len, ghost,
             blockSize = wrapper.offsetWidth / 19,
             canvas    = document.createElement("canvas");
@@ -1044,11 +1070,13 @@ var PACMAN = (function () {
         map   = new Pacman.Map(blockSize);
         user  = new Pacman.User({ 
             "completedLevel" : completedLevel, 
-            "eatenPill"      : eatenPill 
+            "eatenPill"      : eatenPill,
+            "eatenBiscuit"   : eatenBiscuit			
         }, map);
 
         for (i = 0, len = ghostSpecs.length; i < len; i += 1) {
-            ghost = new Pacman.Ghost({"getTick":getTick}, map, ghostSpecs[i]);
+            //ghost = new Pacman.Ghost(this, map, ghostSpecs[i]);
+            ghost = new Pacman.Ghost({ "getTick": getTick, "getLevel":getLevel }, map, ghostSpecs[i]);
             ghosts.push(ghost);
         }
         
@@ -1062,8 +1090,7 @@ var PACMAN = (function () {
             ["die", root + "audio/die." + extension],
             ["eatghost", root + "audio/eatghost." + extension],
             ["eatpill", root + "audio/eatpill." + extension],
-            ["eating", root + "audio/eating.short." + extension],
-            ["eating2", root + "audio/eating.short." + extension]
+            ["eating", root + "audio/eating.short." + extension]
         ];
 
         load(audio_files, function() { loaded(); });

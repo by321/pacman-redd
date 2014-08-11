@@ -38,16 +38,79 @@
   Code on <a href="http://arandomurl.com/">Github</a>
 
   <div id="pacman"></div>
+  
+ 
   <script src="pacman.js"></script>
   <script src="modernizr-1.5.min.js"></script>
 
   <script>
+	function load_av(av_urls,done_function,eleType) {
+		'use strict';
+		var myitems=[],items_loaded=0;
+		function on_item_loaded() {
+			items_loaded++;
+			//alert('items loaded: '+items_loaded);
+			if (items_loaded==av_urls.length) {
+				for (var i=0;i<av_urls.length;i++) {
+					if (eleType=='img') myitems[i].onload=null;
+					else myitems[i].oncanplaythrough=null;
+					myitems[i].onerror=null;
+				}
+				done_function(myitems);
+			}
+		}
+		function on_load_error(fi) {
+			for (var i=0;i<av_urls.length;i++) {
+				myitems[i].src='';
+				myitems[i]=null;
+			}
+			myitems=null;
+			alert('failed to load item: '+av_urls[fi]);
+		}
+		function curry_on_load_error(i) {
+			return function() { on_load_error(i); };
+		}
+		
+		for (var i=0;i<av_urls.length;i++) {
+			if (eleType=='img') myitems[i]=new Image();
+			else myitems[i]=new Audio();
+			//myitems[i]=document.createElement(eleType);
+			if (eleType=='img') myitems[i].onload=on_item_loaded;
+			else myitems[i].oncanplaythrough=on_item_loaded;
+			myitems[i].onerror=curry_on_load_error(i); 
+		}
+		for (var i=0;i<av_urls.length;i++) {
+			myitems[i].src=av_urls[i];
+		}
+	}
+    var gImages=null, gAudios=null, gAudioNames=null;
+	
+	function all_images_loaded(imgs) {
+		//for (var i=0;i<imgs.length;i++) alert(imgs[i].src);
+		gImages=imgs;
+		window.setTimeout(function () { PACMAN.init(el, "./"); }, 0);
+	}
+	function all_audios_loaded(auds) {
+		gAudios=auds;
+		load_av( ["./pacman_redd.png", "./reddcoin_logo.png"],all_images_loaded,"img");
+	}
+
 
     var el = document.getElementById("pacman");
 
     if (Modernizr.canvas && Modernizr.localstorage && 
         Modernizr.audio && (Modernizr.audio.ogg || Modernizr.audio.mp3)) {
-      window.setTimeout(function () { PACMAN.init(el, "./"); }, 0);
+
+		var aud_ext = Modernizr.audio.ogg ? 'ogg' : 'mp3';
+		var aud_urls = [ "./audio/opening_song." + aud_ext,
+						 "./audio/die." + aud_ext,
+						 "./audio/eatghost." + aud_ext,
+						 "./audio/eatpill." + aud_ext,
+						 "./audio/eating.short." + aud_ext ];
+		gAudioNames=["start","die","eatghost","eatpill","eating"];
+		load_av(aud_urls,all_audios_loaded,"audio");
+		
+		//window.setTimeout(function () { PACMAN.init(el, "./"); }, 0);
     } else { 
       el.innerHTML = "Sorry, needs a decent browser<br /><small>" + 
         "(firefox 3.6+, Chrome 4+, Opera 10+ and Safari 4+)</small>";
