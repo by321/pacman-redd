@@ -563,33 +563,29 @@ Pacman.Map = function (size) {
     
     function drawWall(ctx) {
 
-        var i, j, p, line;
-        
+        var ys=Pacman.MAP.length;
+		var xs=Pacman.MAP[0].length;
+		
         ctx.strokeStyle = "#0000FF";
         ctx.lineWidth   = 5;
         ctx.lineCap     = "round";
-        
-        for (i = 0; i < Pacman.WALLS.length; i += 1) {
-            line = Pacman.WALLS[i];
-            ctx.beginPath();
-
-            for (j = 0; j < line.length; j += 1) {
-
-                p = line[j];
-                
-                if (p.move) {
-                    ctx.moveTo(p.move[0] * blockSize, p.move[1] * blockSize);
-                } else if (p.line) {
-                    ctx.lineTo(p.line[0] * blockSize, p.line[1] * blockSize);
-                } else if (p.curve) {
-                    ctx.quadraticCurveTo(p.curve[0] * blockSize, 
-                                         p.curve[1] * blockSize,
-                                         p.curve[2] * blockSize, 
-                                         p.curve[3] * blockSize);   
-                }
-            }
-            ctx.stroke();
-        }
+		
+		ctx.beginPath();
+ 
+		for (var y=0;y<ys;y++) {
+			for (var x=0;x<xs;x++) {
+				if (Pacman.WALL!=Pacman.MAP[y][x]) continue;
+				var ctrx=x*blockSize+blockSize/2;
+				var ctry=y*blockSize+blockSize/2;
+				if (y>0 && Pacman.WALL==Pacman.MAP[y-1][x]) {
+					ctx.moveTo(ctrx,ctry); ctx.lineTo(ctrx,ctry-blockSize);
+				}
+				if (x>0 && Pacman.WALL==Pacman.MAP[y][x-1]) {
+					ctx.moveTo(ctrx,ctry); ctx.lineTo(ctrx-blockSize,ctry);
+				}
+			}
+		}
+		ctx.stroke();
     }
     
     function reset() {       
@@ -698,80 +694,27 @@ Pacman.Map = function (size) {
 
 Pacman.Audio = function(game) {
     
-    var files          = [], 
-        endEvents      = [],
-        progressEvents = [],
-        playing        = [];
-    
-    function load(name, path, cb) { 
-
-        var f = files[name] = document.createElement("audio");
-
-        progressEvents[name] = function(event) { progress(event, name, cb); };
-        
-        f.addEventListener("canplaythrough", progressEvents[name], true);
-        f.setAttribute("preload", "true");
-        f.setAttribute("autobuffer", "true");
-        f.setAttribute("src", path);
-        f.pause();        
-    };
-
-    function progress(event, name, callback) { 
-        if (event.loaded === event.total && typeof callback === "function") {
-            callback();
-            files[name].removeEventListener("canplaythrough", 
-                                            progressEvents[name], true);
-        }
-    };
-
     function disableSound() {
-        //for (var i = 0; i < playing.length; i++) {
-        //    files[playing[i]].pause();
-        //    files[playing[i]].currentTime = 0;
-        //}
-        //playing = [];
+
 		for (var i=0;i<gAudios.length;i++) {
 			gAudios[i].pause();
 			gAudios[i].currentTime=0;
 		}
     };
 
-    function ended(name) { 
-
-        var i, tmp = [], found = false;
-
-        files[name].removeEventListener("ended", endEvents[name], true);
-
-        for (i = 0; i < playing.length; i++) {
-            if (!found && playing[i]==name) { 
-                found = true;
-            } else { 
-                tmp.push(playing[i]);
-            }
-        }
-        playing = tmp;
-    };
 
     function play(name) { 
 		if (game.soundDisabled()) return;
 		for (var i=0;i<gAudios.length;i++) {
 			if (gAudioNames[i]==name) {
-				//gAudios[i].currentTime=Modernizr.audio.mp3 ? 0.05 :0;
+				gAudios[i].currentTime=Modernizr.audio.mp3 ? 0.05 :0;
+				//gAudios[i].currentTime=0;
 				gAudios[i].play();
 			}
 		}
-		//if (!game.soundDisabled()) {
-		//	endEvents[name] = function() { ended(name); };
-		//	files[name].addEventListener("ended", endEvents[name], true);
-        //    playing.push(name);
-        //    files[name].play();
-        //}
     };
 
     function pause() { 
-        //for (var i = 0; i < playing.length; i++) {
-        //    files[playing[i]].pause();
-        //}
 		for (var i=0;i<gAudios.length;i++) gAudios[i].pause();
     };
     
@@ -783,7 +726,6 @@ Pacman.Audio = function(game) {
     
     return {
         "disableSound" : disableSound,
-        "load"         : load,
         "play"         : play,
         "pause"        : pause,
         "resume"       : resume
@@ -1081,32 +1023,6 @@ var PACMAN = (function () {
         }
         
         map.draw(ctx);
-        dialog("Loading ...");
-
-        var extension = Modernizr.audio.ogg ? 'ogg' : 'mp3';
-
-        var audio_files = [
-            ["start", root + "audio/opening_song." + extension],
-            ["die", root + "audio/die." + extension],
-            ["eatghost", root + "audio/eatghost." + extension],
-            ["eatpill", root + "audio/eatpill." + extension],
-            ["eating", root + "audio/eating.short." + extension]
-        ];
-
-        load(audio_files, function() { loaded(); });
-    };
-
-    function load(arr, callback) { 
-        
-        if (arr.length === 0) { 
-            callback();
-        } else { 
-            var x = arr.pop();
-            audio.load(x[0], x[1], function() { load(arr, callback); });
-        }
-    };
-        
-    function loaded() {
 
         dialog("Press N to Start");
         
@@ -1115,6 +1031,7 @@ var PACMAN = (function () {
         
         timer = window.setInterval(mainLoop, 1000 / Pacman.FPS);
     };
+
     
     return {
         "init" : init
@@ -1173,111 +1090,6 @@ Pacman.MAP = [
 	[0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
 	[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-];
-
-Pacman.WALLS = [
-    
-    [{"move": [0, 9.5]}, {"line": [3, 9.5]},
-     {"curve": [3.5, 9.5, 3.5, 9]}, {"line": [3.5, 8]},
-     {"curve": [3.5, 7.5, 3, 7.5]}, {"line": [1, 7.5]},
-     {"curve": [0.5, 7.5, 0.5, 7]}, {"line": [0.5, 1]},
-     {"curve": [0.5, 0.5, 1, 0.5]}, {"line": [9, 0.5]},
-     {"curve": [9.5, 0.5, 9.5, 1]}, {"line": [9.5, 3.5]}],
-
-    [{"move": [9.5, 1]},
-     {"curve": [9.5, 0.5, 10, 0.5]}, {"line": [18, 0.5]},
-     {"curve": [18.5, 0.5, 18.5, 1]}, {"line": [18.5, 7]},
-     {"curve": [18.5, 7.5, 18, 7.5]}, {"line": [16, 7.5]},
-     {"curve": [15.5, 7.5, 15.5, 8]}, {"line": [15.5, 9]},
-     {"curve": [15.5, 9.5, 16, 9.5]}, {"line": [19, 9.5]}],
-
-    [{"move": [2.5, 5.5]}, {"line": [3.5, 5.5]}],
-
-    [{"move": [3, 2.5]},
-     {"curve": [3.5, 2.5, 3.5, 3]},
-     {"curve": [3.5, 3.5, 3, 3.5]},
-     {"curve": [2.5, 3.5, 2.5, 3]},
-     {"curve": [2.5, 2.5, 3, 2.5]}],
-
-    [{"move": [15.5, 5.5]}, {"line": [16.5, 5.5]}],
-
-    [{"move": [16, 2.5]}, {"curve": [16.5, 2.5, 16.5, 3]},
-     {"curve": [16.5, 3.5, 16, 3.5]}, {"curve": [15.5, 3.5, 15.5, 3]},
-     {"curve": [15.5, 2.5, 16, 2.5]}],
-
-    [{"move": [6, 2.5]}, {"line": [7, 2.5]}, {"curve": [7.5, 2.5, 7.5, 3]},
-     {"curve": [7.5, 3.5, 7, 3.5]}, {"line": [6, 3.5]},
-     {"curve": [5.5, 3.5, 5.5, 3]}, {"curve": [5.5, 2.5, 6, 2.5]}],
-
-    [{"move": [12, 2.5]}, {"line": [13, 2.5]}, {"curve": [13.5, 2.5, 13.5, 3]},
-     {"curve": [13.5, 3.5, 13, 3.5]}, {"line": [12, 3.5]},
-     {"curve": [11.5, 3.5, 11.5, 3]}, {"curve": [11.5, 2.5, 12, 2.5]}],
-
-    [{"move": [7.5, 5.5]}, {"line": [9, 5.5]}, {"curve": [9.5, 5.5, 9.5, 6]},
-     {"line": [9.5, 7.5]}],
-    [{"move": [9.5, 6]}, {"curve": [9.5, 5.5, 10.5, 5.5]},
-     {"line": [11.5, 5.5]}],
-
-
-    [{"move": [5.5, 5.5]}, {"line": [5.5, 7]}, {"curve": [5.5, 7.5, 6, 7.5]},
-     {"line": [7.5, 7.5]}],
-    [{"move": [6, 7.5]}, {"curve": [5.5, 7.5, 5.5, 8]}, {"line": [5.5, 9.5]}],
-
-    [{"move": [13.5, 5.5]}, {"line": [13.5, 7]},
-     {"curve": [13.5, 7.5, 13, 7.5]}, {"line": [11.5, 7.5]}],
-    [{"move": [13, 7.5]}, {"curve": [13.5, 7.5, 13.5, 8]},
-     {"line": [13.5, 9.5]}],
-
-    [{"move": [0, 11.5]}, {"line": [3, 11.5]}, {"curve": [3.5, 11.5, 3.5, 12]},
-     {"line": [3.5, 13]}, {"curve": [3.5, 13.5, 3, 13.5]}, {"line": [1, 13.5]},
-     {"curve": [0.5, 13.5, 0.5, 14]}, {"line": [0.5, 17]},
-     {"curve": [0.5, 17.5, 1, 17.5]}, {"line": [1.5, 17.5]}],
-    [{"move": [1, 17.5]}, {"curve": [0.5, 17.5, 0.5, 18]}, {"line": [0.5, 21]},
-     {"curve": [0.5, 21.5, 1, 21.5]}, {"line": [18, 21.5]},
-     {"curve": [18.5, 21.5, 18.5, 21]}, {"line": [18.5, 18]},
-     {"curve": [18.5, 17.5, 18, 17.5]}, {"line": [17.5, 17.5]}],
-    [{"move": [18, 17.5]}, {"curve": [18.5, 17.5, 18.5, 17]},
-     {"line": [18.5, 14]}, {"curve": [18.5, 13.5, 18, 13.5]},
-     {"line": [16, 13.5]}, {"curve": [15.5, 13.5, 15.5, 13]},
-     {"line": [15.5, 12]}, {"curve": [15.5, 11.5, 16, 11.5]},
-     {"line": [19, 11.5]}],
-
-    [{"move": [5.5, 11.5]}, {"line": [5.5, 13.5]}],
-    [{"move": [13.5, 11.5]}, {"line": [13.5, 13.5]}],
-
-    [{"move": [2.5, 15.5]}, {"line": [3, 15.5]},
-     {"curve": [3.5, 15.5, 3.5, 16]}, {"line": [3.5, 17.5]}],
-    [{"move": [16.5, 15.5]}, {"line": [16, 15.5]},
-     {"curve": [15.5, 15.5, 15.5, 16]}, {"line": [15.5, 17.5]}],
-
-    [{"move": [5.5, 15.5]}, {"line": [7.5, 15.5]}],
-    [{"move": [11.5, 15.5]}, {"line": [13.5, 15.5]}],
-    
-    [{"move": [2.5, 19.5]}, {"line": [5, 19.5]},
-     {"curve": [5.5, 19.5, 5.5, 19]}, {"line": [5.5, 17.5]}],
-    [{"move": [5.5, 19]}, {"curve": [5.5, 19.5, 6, 19.5]},
-     {"line": [7.5, 19.5]}],
-
-    [{"move": [11.5, 19.5]}, {"line": [13, 19.5]},
-     {"curve": [13.5, 19.5, 13.5, 19]}, {"line": [13.5, 17.5]}],
-    [{"move": [13.5, 19]}, {"curve": [13.5, 19.5, 14, 19.5]},
-     {"line": [16.5, 19.5]}],
-
-    [{"move": [7.5, 13.5]}, {"line": [9, 13.5]},
-     {"curve": [9.5, 13.5, 9.5, 14]}, {"line": [9.5, 15.5]}],
-    [{"move": [9.5, 14]}, {"curve": [9.5, 13.5, 10, 13.5]},
-     {"line": [11.5, 13.5]}],
-
-    [{"move": [7.5, 17.5]}, {"line": [9, 17.5]},
-     {"curve": [9.5, 17.5, 9.5, 18]}, {"line": [9.5, 19.5]}],
-    [{"move": [9.5, 18]}, {"curve": [9.5, 17.5, 10, 17.5]},
-     {"line": [11.5, 17.5]}],
-
-    [{"move": [8.5, 9.5]}, {"line": [8, 9.5]}, {"curve": [7.5, 9.5, 7.5, 10]},
-     {"line": [7.5, 11]}, {"curve": [7.5, 11.5, 8, 11.5]},
-     {"line": [11, 11.5]}, {"curve": [11.5, 11.5, 11.5, 11]},
-     {"line": [11.5, 10]}, {"curve": [11.5, 9.5, 11, 9.5]},
-     {"line": [10.5, 9.5]}]
 ];
 
 Object.prototype.clone = function () {
