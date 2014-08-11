@@ -1,13 +1,3 @@
-/*jslint browser: true, undef: true, eqeqeq: true, nomen: true, white: true */
-/*global window: false, document: false */
-
-/*
- * fix looped audio
- * add fruits + levels
- * fix what happens when a ghost is eaten (should go back to base)
- * do proper ghost mechanics (blinky/wimpy etc)
- */
-
 var NONE        = 4,
     UP          = 3,
     LEFT        = 2,
@@ -22,7 +12,7 @@ var NONE        = 4,
     Pacman      = {};
 
 Pacman.FPS = 25;
-fplayed=false
+
 var audio_disabled=false;
 
 
@@ -148,9 +138,9 @@ Pacman.Ghost = function (game, map, colour) {
             top  = (position.y/10) * s,
             left = (position.x/10) * s;
         var eatableLeft = 9 - game.getLevel();
-		if (eatableLeft<1) eatableLeft=1;
+		if (eatableLeft<0) eatableLeft=0;
 		if (eatableLeft>8) eatableLeft=8;
-        if (eatable && secondsAgo(eatable) > 1000+eatableLeft ) {
+        if (eatable && secondsAgo(eatable) > eatableLeft ) {
             eatable = null;
         }
         

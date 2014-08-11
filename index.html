@@ -1,45 +1,53 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>HTML5 Pacman</title>
-    
-    <style type="text/css">
+<head> <meta charset="utf-8" />
+<title>Redd pacman - why eat yellow coin when you can eat Reddcoin ?</title>
+<style type="text/css">
+	
+	#pacman { height:450px; width:342px; margin:20px auto; }
+	table,th,td { border:1px solid black; border-collapse:collapse; }
+	th, td{padding:5px;}
+
       @font-face {
 	    font-family: 'BDCartoonShoutRegular';
         src: url('BD_Cartoon_Shout-webfont.ttf') format('truetype');
-	    font-weight: normal;
-	    font-style: normal;
-      }
-      #pacman {
-        height:450px;
-        width:342px;
-        margin:20px auto;
       }
       #shim { 
         font-family: BDCartoonShoutRegular; 
         position:absolute;
         visibility:hidden
       }
-      h1 { font-family: BDCartoonShoutRegular; text-align:center; }
-      body { width:342px; margin:0px auto; font-family:sans-serif; }
-      a { text-decoration:none; }
-    </style>
-
+</style>
 </head>
 
 <body>
+ <div id="shim">shim for font face</div>
   
-  <div id="shim">shim for font face</div>
-
-  <h1>HTML5 Pacman</h1>
-
-  <a href="http://arandomurl.com/">Writeup</a> |
-  Code on <a href="http://arandomurl.com/">Github</a>
+<center>
+  <strong>Redd pacman</strong><br>
+	Why eat yellow coin when you can eat <a href="http://www.reddcoin.com/">Reddcoin</a> ?
+</center>
 
   <div id="pacman"></div>
-  
- 
+<center>
+keyboard controls:<br>
+<table >
+<tr><td>arrow keys</td><td>movement</td></tr>
+<tr><td>N</td><td>new game</td></tr>
+<tr><td>P</td><td>pause</td></tr>
+<tr><td>S</td><td>sound on/off</td></tr>
+</table><br>
+
+
+Donation address: RZmrk3DgmPSPo52LfpZZvwtXh926QdMhtV
+<hr>
+
+<a href="https://twitter.com/share?url=www.google.com&via=by321_a&text=Why eat yellow coin when you can eat Reddcoin %3F http://by321.github.io/pacman-redd">share on Twitter</a>
+ * 
+<a href="https://www.facebook.com/sharer/sharer.php?u=http://by321.github.io/pacman-redd">share on Facebook</a>
+
+</center> 
+
   <script src="pacman.js"></script>
   <script src="modernizr-1.5.min.js"></script>
 
